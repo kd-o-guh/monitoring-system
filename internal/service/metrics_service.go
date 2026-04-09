@@ -1,6 +1,7 @@
 package service
 
 import (
+	"monitoring-system/internal/dto"
 	"monitoring-system/internal/model"
 	"monitoring-system/internal/repository"
 )
@@ -32,5 +33,24 @@ func (s *MetricsService) CreateMetric(metric model.Metric) (map[string]interface
 }
 
 func (s *MetricsService) GetMetrics() ([]model.Metric, error) {
-	return s.repo.FindAll()
+	metrics, err := s.repo.FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	var response []model.Metric
+
+	for _, m := range metrics {
+
+		resp := model.Metric{
+			Hostname: m.Hostname,
+			CPU:      dto.Percent(m.CPU),
+			Memory:   dto.Percent(m.Memory),
+			Disk:     dto.Percent(m.Disk),
+		}
+
+		response = append(response, resp)
+	}
+
+	return response, nil
 }
