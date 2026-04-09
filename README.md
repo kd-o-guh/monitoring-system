@@ -1,131 +1,61 @@
-# 🚀 Monitoring System
+# Monitoring System
 
-Sistema de monitoramento distribuído desenvolvido em Go, capaz de coletar métricas reais da máquina (CPU, memória e disco) através de um agente e enviá-las para uma API REST com persistência em PostgreSQL.
+Sistema de monitoramento composto por um agente coletor e uma API backend para armazenamento e consulta de métricas de sistema.
 
----
+## 📌 Descrição
 
-## 📌 Sobre o projeto
+Este projeto consiste em um sistema distribuído para coleta e exposição de métricas de infraestrutura.
 
-Este projeto simula o funcionamento de ferramentas como sistemas de monitoramento (ex: Zabbix, Datadog), onde um agente coleta informações do sistema operacional e envia para um servidor central.
+O sistema é composto por dois componentes principais:
 
-O backend processa e armazena essas métricas, permitindo consulta posterior via API.
+- **Agente coletor** responsável por capturar métricas da máquina
+- **API backend** responsável por receber, armazenar e disponibilizar as métricas coletadas
 
----
+O agente coleta métricas como:
 
-## 🏗️ Arquitetura
+- Uso de CPU
+- Uso de memória
+- Uso de disco
 
-O sistema é dividido em duas partes principais:
+A arquitetura permite a adição de novas métricas futuramente, como:
 
-### 🔹 API (Backend)
+- GPU Usage
+- Network Usage
+- Temperature Metrics
 
-* Desenvolvida em Go
-* Arquitetura em camadas:
-
-  * Handler
-  * Service
-  * Repository
-* Integração com PostgreSQL
-* Endpoints REST:
-
-  * `POST /metrics` → recebe métricas
-  * `GET /metrics` → lista métricas
-  * `GET /health` → status da API
+Os dados coletados são armazenados em um banco de dados PostgreSQL e podem ser consultados via API.
 
 ---
 
-### 🔹 Agent (Coletor)
+## 🧱 Arquitetura
 
-* Desenvolvido em Go
-* Coleta métricas reais da máquina:
+Agente → API → PostgreSQL → Consulta via Endpoint
 
-  * CPU
-  * Memória
-  * Disco
-* Envio automático para a API
-* Configurável via `.env`
-* Implementa:
-
-  * Retry
-  * Timeout HTTP
-  * Execução contínua
+O agente envia periodicamente os dados coletados para a API, que armazena as informações no banco de dados PostgreSQL.
 
 ---
 
-## 🐳 Como rodar com Docker
+## 🚀 Tecnologias utilizadas
 
-### 1. Subir o ambiente
-
-```bash
-docker-compose up --build
-```
-
+- Go (Golang)
+- REST API
+- PostgreSQL
+- Docker
+- Docker Compose
+  
 ---
 
-### 2. Acessar a API
+## 📡 Endpoints disponíveis
 
-```bash
-http://localhost:8080/health
-```
+### `GET /metrics`
 
----
+Retorna as métricas coletadas pelo sistema.
 
-### 3. Testar envio de métricas
+Exemplo de resposta:
 
-```bash
-curl -X POST http://localhost:8080/metrics \
--H "Content-Type: application/json" \
--d '{"hostname":"server-01","cpu":50,"memory":70,"disk":80}'
-```
-
----
-
-## ⚙️ Configuração do Agent
-
-Crie um arquivo `.env`:
-
-```env
-API_URL=http://localhost:8080/metrics
-INTERVAL=5
-```
-
-Rodar o agent:
-
-```bash
-go run scripts/agent/main.go
-```
-
----
-
-## 🧰 Tecnologias utilizadas
-
-* Go (Golang)
-* PostgreSQL
-* Docker & Docker Compose
-* gopsutil (coleta de métricas do sistema)
-
----
-
-## 💡 Diferenciais
-
-* Coleta de métricas reais do sistema operacional
-* Arquitetura limpa (separação de responsabilidades)
-* Sistema distribuído (agent + API)
-* Resiliência com retry e timeout
-* Configuração via variáveis de ambiente
-* Ambiente totalmente dockerizado
-
----
-
-## 📈 Possíveis melhorias
-
-* Dashboard (Grafana ou frontend próprio)
-* Autenticação na API
-* Paginação e filtros nas métricas
-* Sistema de alertas
-* Migrations automatizadas
-
----
-
-## 👨‍💻 Autor
-
-Desenvolvido por Gustavo Barbosa
+```json
+{
+  "cpu": "35%",
+  "memory": "62%",
+  "disk": "48%"
+}
