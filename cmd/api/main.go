@@ -1,40 +1,41 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 
 	"monitoring-system/internal/config"
 	handler "monitoring-system/internal/handler/http"
 	"monitoring-system/internal/repository"
 	"monitoring-system/internal/service"
+	"monitoring-system/migrations"
 )
 
 func main() {
-	mux := http.NewServeMux()
+	r := gin.Default()
 
-	db := config.ConnectDB()
+	db, err := config.ConnectDB(context.Background())
+	if err != nil {
+		log.Fatal("Erro ao conectar no banco:", err)
+	}
+	defer db.Close()
+	if err := migrations.Apply(context.Background(), db); err != nil {
+		log.Fatal("Erro ao aplicar migrações:", err)
+	}
 
 	repo := repository.NewMetricsRepository(db)
 	service := service.NewMetricsService(repo)
 	metricsHandler := handler.NewMetricsHandler(service)
 
-	mux.HandleFunc("/health", handler.HealthHandler)
+	r.GET("/health", handler.HealthHandler(db))
 
-	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			metricsHandler.GetMetrics(w, r)
-			return
-		}
-		if r.Method == http.MethodPost {
-			metricsHandler.CreateMetric(w, r)
-			return
-		}
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-	})
+	r.GET("/metrics", metricsHandler.GetMetrics)
+	r.POST("/metrics", metricsHandler.CreateMetric)
 
 	log.Println("Servidor rodando na porta :8080")
-	err := http.ListenAndServe(":8080", mux)
+	err = r.Run(":8080")
 	if err != nil {
 		log.Fatal(err)
 	}
